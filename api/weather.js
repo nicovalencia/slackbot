@@ -1,18 +1,27 @@
 var request = require('request');
+var fs = require('fs');
+var ejs = require('ejs');
 
 var FORECAST_URL = 'https://api.forecast.io/forecast/' + process.env.FORECAST_API_KEY + '/';
 var GEOCODE_URL = 'http://maps.googleapis.com/maps/api/geocode/json?address=';
 
+var templateString = String(fs.readFileSync('./views/weather.ejs'));
+var template = ejs.compile(templateString);
+
 module.exports = function(req, res) {
 
-  request(GEOCODE_URL + req.body.text, function(err, resp, body) {
+  var query = req.body.text.replace('`w ', '');
+
+  request(GEOCODE_URL + encodeURIComponent(query), function(err, resp, body) {
     var address = parseAddress(body);
     request(FORECAST_URL + parseCoords(body), function(err, resp, body) {
-      res.render('weather', {
-        user_name: req.body.user_name,
-        address: address,
-        summary: parseSummary(body),
-        temperature: parseTemperature(body)
+      res.send({
+        text: template({
+          user_name: req.body.user_name,
+          address: address,
+          summary: parseSummary(body),
+          temperature: parseTemperature(body)
+        })
       });
     });
   });
