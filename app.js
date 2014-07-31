@@ -21,6 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/test', require('./api/test'));
 app.post('/weather', require('./api/weather'));
+app.post('/mlm', require('./api/mlm'));
 app.get('/cat', require('./api/cat'));
 
 /// catch 404 and forward to error handler
