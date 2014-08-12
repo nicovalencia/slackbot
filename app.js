@@ -4,6 +4,8 @@ var favicon = require('static-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var fs = require('fs');
+var _ = require('lodash');
 
 var app = express();
 
@@ -19,16 +21,28 @@ app.use(cookieParser());
 app.use(require('less-middleware')(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/test', require('./api/test'));
-app.post('/weather', require('./api/weather'));
-app.post('/mlm', require('./api/mlm'));
-app.post('/cat', require('./api/cat'));
+// Load API route controllers:
+var apiFiles = fs.readdirSync('./api');
+_.each(apiFiles, function(file) {
+  var fileComponents = file.split('.');
+  var isJSFile = _.last(fileComponents) === 'js';
+
+  // Only load JS files:
+  if (!isJSFile) return true;
+
+  var name = _.first(fileComponents);
+  var route = '/' + name;
+  var handler = require('./api/'+name);
+
+  console.log('Mounting /%s', name);
+  app.post(route, handler);
+});
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
 
 /// error handlers
@@ -36,23 +50,23 @@ app.use(function(req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
-        res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err
-        });
+  app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.render('error', {
+      message: err.message,
+      error: err
     });
+  });
 }
 
 // production error handler
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: {}
-    });
+  res.status(err.status || 500);
+  res.render('error', {
+    message: err.message,
+    error: {}
+  });
 });
 
 
